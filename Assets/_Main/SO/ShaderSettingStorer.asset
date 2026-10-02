@@ -16,18 +16,12 @@ MonoBehaviour:
   Smooth: 17.5
   HeadScale: 0.1
   TorsoUpperScale: 0.125
-  TorsoMidScale: 0.125
   TorsoLowerScale: 0.16
-  TorsoMidExtraScale: 0.16
   LeftArmUpperScale: 0.075
-  LeftArmMidScale: 0.04
   LeftArmLowerScale: 0.05
   RightArmUpperScale: 0.075
-  RightArmMidScale: 0.045
   RightArmLowerScale: 0.05
   LeftLegUpperScale: 0.07
   LeftLegLowerScale: 0.07
-  LeftLegMidScale: 0.075
   RightLegUpperScale: 0.07
   RightLegLowerScale: 0.07
-  RightLegMidScale: 0.06

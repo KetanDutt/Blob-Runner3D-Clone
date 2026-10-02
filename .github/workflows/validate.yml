@@ -1,0 +1,21 @@
+name: Validate project
+
+# Fast static checks that need no Unity licence: .meta files, GUID / fileID references,
+# script <-> class names, build settings and project specific rules (see tools/validate_project.py).
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Validate the Unity project
+        run: python3 tools/validate_project.py --strict

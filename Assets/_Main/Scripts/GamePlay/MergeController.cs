@@ -1,114 +1,47 @@
-using System.Collections.Generic;
-using DG.Tweening;
 using UnityEngine;
 
-public class MergeController : MonoBehaviour
+namespace BlobRunner
 {
-    [System.Serializable]
-    public class MergeInfo
+    /// <summary>Regrows cut off body parts when loot is collected.</summary>
+    public class MergeController : MonoBehaviour
     {
-        public Transform parent = null;
-        public BodyPart bodyPart = null;
-        public Vector3 mergePosition = Vector3.zero;
-        public Vector3 mergeRotation = Vector3.zero;
-        public Vector3 mergeScale = Vector3.zero;
-    }
-    
-    [SerializeField] private ShaderSetting mergeScaleTargetInfo;
+        /// <summary>Delay between two parts starting to fly back (gives a pleasant cascade).</summary>
+        [SerializeField] private float stagger = 0.045f;
 
-    [SerializeField]
-    private List<MergeInfo> mergeParts = new List<MergeInfo>();
-    
-    [SerializeField]
-    private List<MergeInfo> debug = new List<MergeInfo>();
-    
-    private Material _renderer = null;
+        private Player _player;
 
-    private void Start()
-    {
-        _renderer = GetComponentInChildren<MeshRenderer>().sharedMaterial;
-        
-        Initialize();
-    }
-
-    private void Initialize()
-    {
-        foreach (var bPart in GetComponentsInChildren<BodyPart>())
+        private void Awake()
         {
-            var bTransform = bPart.transform;
-            
-            mergeParts.Add(new MergeInfo()
-            {
-                bodyPart = bPart,
-                parent = bTransform.parent,
-                mergePosition = bTransform.localPosition,
-                mergeRotation = bTransform.localEulerAngles,
-                mergeScale = bTransform.localScale
-            });
+            _player = GetComponent<Player>();
         }
-    }
 
-    public void Merge(Color targetColor)
-    {
-        var list = GetValidMergeTargetParts();
-
-        foreach (var targetPart in list)
+        /// <summary>
+        /// Regrows every cut off part in <paramref name="color"/>, flying in from <paramref name="worldFrom"/>.
+        /// Returns the number of parts that were restored.
+        /// </summary>
+        public int Merge(Color color, Vector3 worldFrom)
         {
-            var partTransform = targetPart.bodyPart.transform;
-            
-            // Set color
-           _renderer.SetColor(targetPart.bodyPart.ShaderColorParam, targetColor);
-            
-            // Set scale to zero
-            targetPart.bodyPart.SetScale(-.2F, _renderer);
-        
-            // Set parent
-            partTransform.SetParent(targetPart.parent);
-        
-            // Set position ,rotation, scale
-            partTransform.position = transform.position;
-            partTransform.localEulerAngles = targetPart.mergeRotation;
-            partTransform.localScale = targetPart.mergeScale;
-            
-            // Stop animations
-            targetPart.bodyPart.StopAllAnimation();
-            
-            // Scale Animation
-            targetPart.bodyPart.AnimateScaleToInitial(
-                mergeScaleTargetInfo.ValueByString(targetPart.bodyPart.ShaderParam), _renderer, null);
+            if (_player == null)
+                _player = GetComponent<Player>();
 
-            // Move Animation
-            partTransform.DOLocalMove(targetPart.mergePosition, 1.5F).OnComplete(() =>
+            var parts = _player.BodyParts;
+            int restored = 0;
+            float delay = 0f;
+
+            for (int i = 0; i < parts.Length; i++)
             {
-                targetPart.bodyPart.UpdateBrokenStatus();
-            });
-        }
-    }
+                var part = parts[i];
+                if (!part.HasBroken)
+                    continue;
 
-    private List<MergeInfo> GetValidMergeTargetParts()
-    {
-        var list = new List<MergeInfo>();
+                _player.SetPartColor(part, color);
+                part.Restore(worldFrom, delay);
 
-        foreach (var part in mergeParts)
-        {
-            if (part.bodyPart.HasBroken)
-            {
-                list.Add(part);
-                
-                // foreach (var bodyPart in part.bodyPart.relatedBodyPart)
-                // {
-                //     if (bodyPart.HasBroken == false)
-                //     {
-                //         list.Add(part);
-                //         
-                //         break;
-                //     }
-                // }
+                delay += stagger;
+                restored++;
             }
 
-            debug = list;
+            return restored;
         }
-
-        return list;
     }
 }

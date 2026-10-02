@@ -1,35 +1,56 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class ShaderSettingApplier : MonoBehaviour
+namespace BlobRunner.Rendering
 {
-    [SerializeField] private ShaderSetting setting = null;
-
-    private void OnDestroy()
+    /// <summary>
+    /// Initialises the runtime material instance of the blob from a <see cref="ShaderSetting"/>.
+    /// (The old implementation wrote the defaults back into the shared material asset in <c>OnDestroy</c> to
+    /// undo gameplay changes; with per-instance materials that hack is no longer needed.)
+    /// </summary>
+    [DefaultExecutionOrder(-50)]
+    public class ShaderSettingApplier : MonoBehaviour
     {
-        var renderer = GetComponent<MeshRenderer>().sharedMaterial;
-        
-        renderer.SetFloat("_Smooth", setting.Smooth);
-        
-        renderer.SetFloat("_HeadScale", setting.HeadScale);
-        renderer.SetFloat("_TorsoUpperScale", setting.TorsoUpperScale);
-        renderer.SetFloat("_TorsoLowerScale", setting.TorsoLowerScale);
-        renderer.SetFloat("_LeftArmUpperScale", setting.LeftArmUpperScale);
-        renderer.SetFloat("_LeftArmLowerScale", setting.LeftArmLowerScale);
-        renderer.SetFloat("_RightArmUpperScale", setting.RightArmUpperScale);
-        renderer.SetFloat("_RightArmLowerScale", setting.RightArmLowerScale);
-        renderer.SetFloat("_LeftLegUpperScale", setting.LeftLegUpperScale);
-        renderer.SetFloat("_LeftLegLowerScale", setting.LeftLegLowerScale);
-        renderer.SetFloat("_RightLegUpperScale", setting.RightLegUpperScale);
-        renderer.SetFloat("_RightLegLowerScale", setting.RightLegLowerScale);
-        
-        renderer.SetColor(name:"_HeadColor", setting.TotalColor);
-        renderer.SetColor(name:"_TorsoColor", setting.TotalColor);
-        renderer.SetColor(name:"_LeftArmColor", setting.TotalColor);
-        renderer.SetColor(name:"_RightArmColor", setting.TotalColor);
-        renderer.SetColor(name:"_LeftLegColor", setting.TotalColor);
-        renderer.SetColor(name:"_RightLegColor", setting.TotalColor);
+        private static readonly string[] ColorProperties =
+        {
+            "_HeadColor", "_TorsoColor", "_LeftArmColor", "_RightArmColor", "_LeftLegColor", "_RightLegColor"
+        };
+
+        private static readonly string[] ScaleProperties =
+        {
+            "_HeadScale", "_TorsoUpperScale", "_TorsoLowerScale", "_LeftArmUpperScale", "_LeftArmLowerScale",
+            "_RightArmUpperScale", "_RightArmLowerScale", "_LeftLegUpperScale", "_LeftLegLowerScale",
+            "_RightLegUpperScale", "_RightLegLowerScale"
+        };
+
+        [SerializeField] private ShaderSetting setting = null;
+
+        private void Awake()
+        {
+            if (setting == null)
+                return;
+
+            var provider = GetComponent<TransformProvider>();
+            Material material = provider != null ? provider.RuntimeMaterial : null;
+            if (material == null)
+            {
+                var meshRenderer = GetComponent<MeshRenderer>();
+                if (meshRenderer != null)
+                    material = meshRenderer.material;
+            }
+
+            if (material != null)
+                Apply(material, setting);
+        }
+
+        public static void Apply(Material material, ShaderSetting setting)
+        {
+            material.SetFloat("_Smooth", setting.Smooth);
+
+            for (int i = 0; i < ScaleProperties.Length; i++)
+                material.SetFloat(ScaleProperties[i], setting.ValueByString(ScaleProperties[i]));
+
+            for (int i = 0; i < ColorProperties.Length; i++)
+                material.SetColor(ColorProperties[i], setting.TotalColor);
+        }
     }
 }
