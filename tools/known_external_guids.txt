@@ -1,0 +1,16 @@
+# GUIDs of assets that live in Unity packages (Packages/ or Library/PackageCache), not in this repository.
+# tools/validate_project.py treats references to these as resolved. One GUID per line, text after '#' is a comment.
+0cd44c1031e13a943bb63640046fad76  # UnityEngine.UI.CanvasScaler        (com.unity.ugui)
+dc42784cf147c0c48a680349fa168899  # UnityEngine.UI.GraphicRaycaster    (com.unity.ugui)
+fe87c0e1cc204ed48ad3b37840f39efc  # UnityEngine.UI.Image               (com.unity.ugui)
+5f7201a12d95ffc409449d95f23cf332  # UnityEngine.UI.Text                (com.unity.ugui)
+cfabb0440166ab443bba8876756fdfa9  # UnityEngine.UI.Shadow              (com.unity.ugui)
+f70555f144d8491a825f0804e09c671c  # UnityEngine.UI.ContentSizeFitter / layout (com.unity.ugui)
+76c392e42b5098c458856cdf6ecaaaa1  # UnityEngine.EventSystems.EventSystem        (com.unity.ugui)
+4f231c4fb786f3946a6b90b886c48677  # UnityEngine.EventSystems.StandaloneInputModule (com.unity.ugui)
+72ece51f2901e7445ab60da3685d6b5f  # Cinemachine.CinemachineBrain           (com.unity.cinemachine)
+45e653bab7fb20e499bda25e1b646fea  # Cinemachine.CinemachineVirtualCamera   (com.unity.cinemachine)
+ac0b09e7857660247b1477e93731de29  # Cinemachine pipeline component         (com.unity.cinemachine)
+f4044717213e31446939f7bd49c896ea  # Cinemachine pipeline component         (com.unity.cinemachine)
+fa7155796051b734daa718462081dc5f  # Cinemachine pipeline component         (com.unity.cinemachine)
+75469ad4d38634e559750d17036d5f7c  # assembly definition of a Unity package referenced by Tayx.Graphy (optional dependency)
