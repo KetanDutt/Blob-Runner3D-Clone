@@ -49,7 +49,7 @@ CGINCLUDE
 #define PostEffectOutput SurfaceOutputStandard
 #define POST_EFFECT PostEffect
 
-#include "Assets\uRaymarching\Shaders\Include\Legacy/Common.cginc"
+#include "Assets/uRaymarching/Shaders/Include/Legacy/Common.cginc"
 
 // @block DistanceFunction
 // These inverse transform matrices are provided

@@ -1,97 +1,124 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+using BlobRunner.Rendering;
 using DG.Tweening;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class LootContainer : MonoBehaviour
+namespace BlobRunner
 {
-    [SerializeField] private Transform[] lootPieces;
-
-    [SerializeField] private Color lootColor;
-    
-    private Material _renderer = null;
-    
-    private List<Tweener> _tweeners = new List<Tweener>();
-
-    private Transform _targetTransform = null;
-
-    private bool _shouldAnimate = true;
-
-    private void Start()
+    /// <summary>
+    /// A wobbling jelly pickup. Collecting it regrows every cut off body part (in the loot's colour).
+    /// </summary>
+    public class LootContainer : MonoBehaviour
     {
-        _renderer = GetComponentInChildren<MeshRenderer>().sharedMaterial;
+        private static readonly int ScaleId = Shader.PropertyToID("_Scale");
+        private static readonly int ShapeColorId = Shader.PropertyToID("_ShapeColor");
 
-        StartIdleAnimation();
-    }
+        [SerializeField] private Transform[] lootPieces;
 
-    private void StartIdleAnimation()
-    {
-        foreach (var piece in lootPieces)
+        [SerializeField] private Color lootColor;
+
+        private Material _material;
+        private TransformProvider _provider;
+        private float _baseScale = 0.1f;
+        private bool _collected;
+
+        public Color LootColor { get { return lootColor; } }
+
+        public bool IsCollected { get { return _collected; } }
+
+        private void Awake()
         {
-            Tweener anim = null;
-            
-            _tweeners.Add(anim);
-            
-            StartCoroutine(Animate(piece, anim));
-        }
-    }
+            _provider = GetComponentInChildren<TransformProvider>(true);
+            if (_provider != null)
+                _material = _provider.RuntimeMaterial;
 
-    private IEnumerator Animate(Transform piece, Tweener anim)
-    {
-        while (_shouldAnimate)
+            if (_material != null && _material.HasProperty(ScaleId))
+                _baseScale = _material.GetFloat(ScaleId);
+        }
+
+        private void Start()
         {
-            yield return new WaitForSeconds(Random.Range(0, .75F));
-
-            var randomLocation = 
-                new Vector3(Random.Range(-1, 1), Random.Range(-1, 1), Random.Range(-1, 1)) / 6.5F;
-
-            anim = piece.DOLocalMove(randomLocation, .75F);
-        
-            yield return new WaitForSeconds(.75F);
+            StartIdleAnimation();
         }
-    }
 
-    private void StopIdleAnimation()
-    {
-        _shouldAnimate = false;
-        
-        foreach (var tween in _tweeners)
+        private void OnDestroy()
         {
-            tween.Kill();
+            DOTween.Kill(this);
         }
-        
-        _tweeners.Clear();
-    }
 
-    private void StartInteractAnimation()
-    {
-        transform.SetParent(_targetTransform);
-
-        transform.DOLocalMove(new Vector3(0, 1, 0), .75F);
-
-        DOTween.To(() => _renderer.GetFloat("_Scale"), x => _renderer.SetFloat("_Scale", x), -.1F, 1F).
-            OnComplete(() => Destroy(gameObject));
-        
-        _targetTransform.GetComponent<MergeController>().Merge(lootColor);
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.TryGetComponent(out Player player))
+        /// <summary>Changes the loot colour (runtime generated levels use a palette).</summary>
+        public void SetColor(Color color)
         {
-            _targetTransform = player.transform;
-            
-            StopIdleAnimation();
-
-            StartInteractAnimation();
+            lootColor = color;
+            if (_material != null)
+                _material.SetColor(ShapeColorId, color);
         }
-    }
 
-    private void OnDestroy()
-    {
-        _renderer.SetFloat("_Scale", .1F);
+        // ---- Idle wobble -----------------------------------------------------------------------------
+
+        private void StartIdleAnimation()
+        {
+            if (lootPieces == null)
+                return;
+
+            foreach (var piece in lootPieces)
+            {
+                if (piece == null)
+                    continue;
+
+                // each piece oscillates between its authored position and a random corner of a small cube
+                var target = new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), Random.Range(-1f, 1f)) / 6.5f;
+                piece.DOLocalMove(target, 0.75f)
+                    .SetDelay(Random.Range(0f, 0.75f))
+                    .SetEase(Ease.InOutSine)
+                    .SetLoops(-1, LoopType.Yoyo)
+                    .SetId(this)
+                    .SetLink(gameObject);
+            }
+        }
+
+        // ---- Collecting ------------------------------------------------------------------------------
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (_collected)
+                return;
+
+            Player player;
+            if (!other.TryGetComponent(out player) || !player.IsInteractive)
+                return;
+
+            Collect(player);
+        }
+
+        private void Collect(Player player)
+        {
+            _collected = true;
+            DOTween.Kill(this);
+
+            var trigger = GetComponent<Collider>();
+            if (trigger != null)
+                trigger.enabled = false;
+
+            // the player regrows its parts from the position of the loot ...
+            player.CollectLoot(this);
+
+            // ... while the loot itself rises with the player and melts away
+            transform.SetParent(player.transform, true);
+            transform.DOLocalMove(new Vector3(0f, 1.1f, 0f), 0.5f).SetEase(Ease.OutQuad).SetId(this).SetLink(gameObject);
+
+            if (_material != null)
+            {
+                DOVirtual.Float(_baseScale, -0.1f, 0.6f, v => _material.SetFloat(ScaleId, v))
+                    .SetEase(Ease.InQuad)
+                    .SetId(this)
+                    .SetLink(gameObject)
+                    .OnComplete(() => Destroy(gameObject));
+            }
+            else
+            {
+                Destroy(gameObject, 0.6f);
+            }
+        }
     }
 }

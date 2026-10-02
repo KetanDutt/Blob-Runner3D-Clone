@@ -269,7 +269,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60d41dd037e864fbfbd390582f7e3b64, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  targetRenderer: {fileID: 0}
+  targetRenderer: {fileID: 271661961406102168}
   pairs:
   - name: _Part1
     transform: {fileID: 271661961614589132}

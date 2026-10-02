@@ -18,6 +18,16 @@ public class Joystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPoint
 
     // While joystick is dragging
     public static Action<Vector2> OnJoystickDrag;
+
+    // With "Enter Play Mode Options" (domain reload disabled) static state survives between play sessions,
+    // so the static events are cleared before the first scene loads.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        OnJoystickPress = null;
+        OnJoystickRelease = null;
+        OnJoystickDrag = null;
+    }
     
     public float HandleRange
     {
@@ -31,7 +41,7 @@ public class Joystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPoint
         set { deadZone = Mathf.Abs(value); }
     }
 
-    public AxisOptions AxisOptions { get { return AxisOptions; } set { axisOptions = value; } }
+    public AxisOptions AxisOptions { get { return axisOptions; } set { axisOptions = value; } }
     public bool SnapX { get { return snapX; } set { snapX = value; } }
     public bool SnapY { get { return snapY; } set { snapY = value; } }
 

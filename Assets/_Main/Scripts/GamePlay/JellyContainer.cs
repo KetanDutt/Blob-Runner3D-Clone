@@ -1,23 +1,42 @@
-using System.Collections;
-using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
 
-public class JellyContainer : MonoBehaviour
+namespace BlobRunner
 {
-    public void StartAnimation(float delay = 0)
+    /// <summary>
+    /// Invisible anchor that cut off body parts gather in. It slides forward a little and sinks to the floor.
+    /// It is destroyed when the last part has been taken back by the loot.
+    /// </summary>
+    public class JellyContainer : MonoBehaviour
     {
-        StartCoroutine(Animate(delay));
-    }
+        private const float DriftDistance = 2f;
+        private const float RestHeight = 0.25f;
 
-    private IEnumerator Animate(float delay)
-    {
-        yield return new WaitForSeconds(delay);
+        private void Awake()
+        {
+            // The prefab ships a (static, non convex) mesh collider that nothing uses. Moving it every frame is
+            // expensive for the physics engine, so it is removed at runtime.
+            var meshCollider = GetComponent<Collider>();
+            if (meshCollider != null)
+                Destroy(meshCollider);
+        }
 
-        var targetLocation = transform.forward * 2F + transform.position;
+        public void StartAnimation(float delay = 0f)
+        {
+            var target = transform.forward * DriftDistance + transform.position;
+            target.y = RestHeight;
 
-        targetLocation.y = .25F;
-        
-        transform.DOMove(targetLocation, 2F);
+            transform.DOMove(target, 2f).SetDelay(delay).SetEase(Ease.OutQuad).SetId(this).SetLink(gameObject);
+        }
+
+        /// <summary>Destroys the container when no body part is attached to it any more.</summary>
+        public void ReleaseIfEmpty()
+        {
+            if (transform.childCount == 0)
+            {
+                DOTween.Kill(this);
+                Destroy(gameObject);
+            }
+        }
     }
 }
